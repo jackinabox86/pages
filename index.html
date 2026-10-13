@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Route Restock: Flow of Goods</title>
+<title>Route Restock</title>
 <style>
   :root {
     --bg: #070b18;
@@ -13,14 +13,14 @@
     --ink: #e6e9f5;
     --ink-2: #a9b1cc;
     --ink-3: #6d7699;
-    --sup: #2a94c8;
-    --sup-hi: #6cc6f2;
-    --fuel: #c97c00;
-    --fuel-hi: #ffb43a;
-    --base: #b45cd6;
+    --blue: #6cc6f2;
+    --rat: #e07b7b;
+    --rat-hi: #f6aaaa;
+    --brown: #a87447;
+    --brown-hi: #d39b68;
     --base-hi: #da9bf0;
     --gold: #f7c548;
-    --prod: #dfe6ff;
+    --dock: #dfe6ff;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--ink);
@@ -28,8 +28,7 @@
   .wrap { max-width: 1240px; margin: 0 auto; padding: 22px 20px 40px; }
   header { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px 28px; margin-bottom: 14px; }
   h1 { margin: 0; font-size: 24px; letter-spacing: .5px; font-weight: 650; }
-  h1 .accent { background: linear-gradient(90deg, var(--sup-hi), var(--base-hi));
-    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  h1 { color: var(--blue); }
   .sub { color: var(--ink-2); margin-top: 3px; max-width: 640px; }
   .tabs { display: flex; gap: 6px; margin-left: auto; }
   .tab { background: var(--panel); border: 1px solid var(--line); color: var(--ink-2);
@@ -58,6 +57,17 @@
   .legend span::before { content: ""; display: inline-block; width: 14px; height: 3px; border-radius: 2px;
     margin-right: 6px; vertical-align: middle; background: var(--c); }
   .legend .rs::before { height: 12px; width: 0; border-left: 2px dashed var(--gold); background: none; border-radius: 0; }
+  .legend .dash::before { width: 16px; background: repeating-linear-gradient(90deg, var(--c) 0 5px, transparent 5px 8px); }
+  .tgt { position: absolute; left: 26px; top: 62px; width: 64px; text-align: center; color: var(--ink-2);
+    font-size: 10.5px; font-weight: 600; letter-spacing: .5px; display: none; }
+  .tgt > b { display: block; color: var(--ink); font-size: 18px; line-height: 1.2; letter-spacing: 0; }
+  .tgt .i { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; margin-left: 4px;
+    border: 1px solid var(--ink-3); border-radius: 50%; font: italic 600 10px Georgia, serif; color: var(--ink-2); cursor: help; }
+  .tgt .i:hover { border-color: var(--ink); color: var(--ink); }
+  .tgt .pop { position: absolute; left: -6px; top: 58px; width: 290px; text-align: left; font-weight: 400; letter-spacing: 0;
+    font-size: 12px; line-height: 1.45; color: var(--ink); background: rgba(10,14,30,.97); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 11px; display: none; z-index: 6; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  .tgt .i:hover + .pop { display: block; }
   svg#chart { width: 100%; height: 250px; display: block; }
   .tip { position: absolute; pointer-events: none; background: rgba(10,14,30,.95); border: 1px solid var(--line);
     border-radius: 8px; padding: 7px 10px; font-size: 12px; color: var(--ink); white-space: nowrap; display: none; z-index: 5; }
@@ -69,13 +79,12 @@
   .log li.now { background: rgba(247,197,72,.10); color: var(--ink); }
   .log .d { font-variant-numeric: tabular-nums; }
   .log .t { font-weight: 600; letter-spacing: .5px; font-size: 11px; padding-top: 1px; }
-  .t.restock { color: var(--gold); } .t.depart { color: var(--sup-hi); }
-  .t.visit { color: var(--base-hi); } .t.arrive { color: var(--prod); }
+  .t.restock { color: var(--gold); } .t.depart { color: var(--blue); }
+  .t.visit { color: var(--base-hi); } .t.arrive { color: var(--dock); }
   table { width: 100%; border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
   th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--line); }
   th:first-child, td:first-child, th:nth-child(2), td:nth-child(2) { text-align: left; }
   th { color: var(--ink-3); font-weight: 600; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; }
-  td.win { color: var(--gold); font-weight: 600; }
   td.buy { color: var(--ink); font-weight: 650; }
   .rules { color: var(--ink-2); font-size: 13px; }
   .rules ol { margin: 6px 0 0; padding-left: 20px; }
@@ -89,8 +98,8 @@
 <div class="wrap">
   <header>
     <div>
-      <h1><span class="accent">Route Restock</span> · Flow of Goods</h1>
-      <div class="sub">One CX origin, one base, a 5-day restock period, 15 days. Cyan is supplies, amber is ship fuel (SF), violet is what sits on the base. Numbers come from the same rules ROUTEBURN uses.</div>
+      <h1>Route Restock</h1>
+      <div class="sub">One CX origin, one base, and a 5-day restock period animated over 15 days. Red is RAT, the supply the base uses. Brown is C, what the base produces.</div>
     </div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-lap="3" aria-selected="true"><b>3-day loop</b> · shorter than restock</button>
@@ -100,6 +109,7 @@
 
   <div class="stage">
     <canvas id="scene"></canvas>
+    <div class="tgt" id="tgt">TARGET<b id="tgtNum">0</b>RAT<span class="i" tabindex="0" aria-label="Why this target">i</span><div class="pop" id="tgtPop"></div></div>
     <div class="controls">
       <button class="btn primary" id="play" aria-label="Play or pause">❚❚</button>
       <button class="btn" id="restart" aria-label="Restart">↺</button>
@@ -118,9 +128,8 @@
     <div class="card" style="position:relative">
       <h2>Stock over 15 days</h2>
       <div class="legend">
-        <span style="--c:var(--sup)">CX supplies</span>
-        <span style="--c:var(--fuel)">CX fuel (SF)</span>
-        <span style="--c:var(--base)">Base supplies</span>
+        <span style="--c:var(--rat)">CX RAT</span>
+        <span class="dash" style="--c:var(--rat)">Base RAT</span>
         <span class="rs">Restock</span>
       </div>
       <svg id="chart" role="img" aria-label="Stock levels over 15 days"></svg>
@@ -138,17 +147,12 @@
     <div class="card full rules">
       <h2>The rules, as the code has them</h2>
       <ol>
-        <li><b>Leaving the CX.</b> The ship unloads everything it carries, refuels, then loads one <i>bill</i>: <code>ceil(supply days × daily use + 1)</code>. Supply days default to the lap length, so a 3-day loop carries <span id="r-bill3"></span> and an 8-day loop carries <span id="r-bill8"></span>.</li>
-        <li><b>At the base.</b> It drops the bill, sweeps up every unit of that input on the base, then drops exactly one bill back. The base always ends the visit holding one bill. What was left over from last time rides home, along with the base's outputs.</li>
+        <li><b>Leaving the CX.</b> The ship loads one <i>bill</i>: days of supply needed × daily use + 1 for buffer. Supply days default to the lap length, so a 3-day loop carries <span id="r-bill3"></span> and an 8-day loop carries <span id="r-bill8"></span>.</li>
+        <li><b>At the base.</b> It always leaves exactly one bill. Any excess inputs ride home, along with the base's outputs.</li>
         <li><b>Back at the CX.</b> Unload-all puts the leftovers and outputs into the warehouse before the next load. So after the first lap, each departure only really costs what the base used since the last one.</li>
-        <li><b>Restock target.</b> The larger of two numbers, per material:
-          <ul>
-            <li><i>Period amount.</i> Lap ≤ 5 days: base use over 5 days, plus fuel for <code>ceil(5 ÷ lap)</code> laps, plus one working set if no ship is out yet. Lap &gt; 5 days: the working set if no ship is out yet, otherwise nothing.</li>
-            <li><i>Departures in the next 5 days.</i> The first departure of a route with no ship out takes the full working set. Every later one takes the base's use since the previous departure, +1. Fuel draws are planned at ×1.1.</li>
-          </ul></li>
+        <li><b>Restock target.</b> The number of lap departures over the restock period (5 days in this example) times the bill of supply for the route.</li>
         <li><b>CX Buy</b> buys the target minus what the warehouse already holds. It fills <i>to</i> the target, so overlapping windows never double-buy.</li>
       </ol>
-      <div class="note">Illustration values: the base uses 10 SUP/day and makes 6 PROD/day; the ship burns 4 SF per day of flight; the base starts with half a lap of supplies plus the +1. Legs are drawn at their nominal length. The extension estimates departures at 85% of leg time, so in a real route a 5-day window can catch a departure slightly earlier than drawn here.</div>
     </div>
   </div>
 </div>
@@ -156,21 +160,17 @@
 <script>
 (() => {
   // ---------------- Model (mirrors route-supply.ts / route-origins.ts / route-rt.ts) ----------------
+  // Restock is the departures-only rule: the steady-rate "period amount" is removed.
   const R = 5;              // restock period (days)
-  const USE = 10;           // base use, SUP/day
-  const PROD = 6;           // base output, PROD/day
-  const FUEL_PER_DAY = 4;   // SF burned per day of flight
-  const FUEL_BUFFER = 1.1;
+  const USE = 10;           // base use, RAT/day
+  const PROD = 6;           // base output, C/day
   const END = 15;
   const EPS = 1e-9;
 
   function build(L) {
     const bill = Math.ceil(USE * L + 1);
-    const fuelBurn = FUEL_PER_DAY * L;
-    const fuelPlan = Math.ceil(fuelBurn * FUEL_BUFFER);
-    const need = { sup: bill, fuel: fuelPlan };                       // working set (stockpileLapNeed)
-    const topUp = g => ({ sup: Math.ceil(USE * g + 1), fuel: fuelPlan }); // later lap's draw
-    const useOver = d => topUp(1 + d).sup - topUp(1).sup;
+    const need = bill;                             // working set (stockpileLapNeed)
+    const topUp = g => Math.ceil(USE * g + 1);     // later lap's draw: use since the last departure, +1
 
     const departs = [];
     for (let k = 0; k * L < END - EPS; k++) departs.push(k * L);
@@ -190,94 +190,85 @@
     events.sort((a, b) => a.t - b.t || a.o - b.o);
 
     const s = {
-      cx: { sup: 0, fuel: 0, prod: 0 },
-      ship: { sup: 0, prod: 0 },
-      base: { lvl: USE * L / 2 + 1, t: 0, prodT: 0 },
+      cx: { rat: 0, c: 0 },
+      ship: { rat: 0, c: 0 },
+      base: { lvl: USE * L / 2 + 1, t: 0, cT: 0 },
       departed: 0, // departures done
-      target: null,
+      restock: null, // the restock that set the current target
     };
     const restocks = [];
     for (const ev of events) {
       const t = ev.t;
       if (ev.type === 'arrive') {
-        ev.sup = s.ship.sup; ev.prod = s.ship.prod;
-        s.cx.sup += s.ship.sup; s.cx.prod += s.ship.prod;
-        s.ship.sup = 0; s.ship.prod = 0;
+        ev.rat = s.ship.rat; ev.c = s.ship.c;
+        s.cx.rat += s.ship.rat; s.cx.c += s.ship.c;
+        s.ship.rat = 0; s.ship.c = 0;
       } else if (ev.type === 'depart') {
-        s.cx.fuel -= fuelBurn; s.cx.sup -= bill;
-        s.ship.sup = bill; s.departed++;
-        ev.fuel = fuelBurn; ev.sup = bill;
+        s.cx.rat -= bill;
+        s.ship.rat = bill; s.departed++;
+        ev.rat = bill;
       } else if (ev.type === 'visit') {
         const before = s.base.lvl - USE * (t - s.base.t);
-        const swept = before + bill;
-        ev.before = before; ev.sup = bill; ev.swept = swept; ev.home = before;
-        ev.prod = PROD * (t - s.base.prodT);
-        s.ship.sup = before; s.ship.prod += ev.prod;
-        s.base.lvl = bill; s.base.t = t; s.base.prodT = t;
+        ev.before = before; ev.rat = bill; ev.home = before;
+        ev.c = PROD * (t - s.base.cT);
+        s.ship.rat = before; s.ship.c += ev.c;
+        s.base.lvl = bill; s.base.t = t; s.base.cT = t;
       } else if (ev.type === 'restock') {
         const upcoming = allDeparts.slice(s.departed);
-        const noneOut = s.departed === 0;
         const loadingNow = upcoming[0] !== undefined && Math.abs(upcoming[0] - t) < EPS;
-        const workingSet = noneOut || loadingNow;
+        const workingSet = s.departed === 0 || loadingNow;
         const draws = [];
         upcoming.forEach((d, i) => {
           if (d > t + R + EPS) return;
-          draws.push({ t: d, need: i === 0 && workingSet ? { ...need } : topUp(L) });
+          draws.push({ t: d, need: i === 0 && workingSet ? need : topUp(L) });
         });
-        const floor = { sup: 0, fuel: 0 };
-        draws.forEach(d => { floor.sup += d.need.sup; floor.fuel += d.need.fuel; });
-        const spanDays = Math.max(R, L);
-        const laps = Math.max(1, Math.ceil(spanDays / L - EPS));
-        let period;
-        if (spanDays > R) {
-          period = workingSet ? { ...need } : { sup: 0, fuel: 0 };
-        } else {
-          period = workingSet ? { sup: bill + useOver(R), fuel: fuelPlan } : topUp(R);
-          period.fuel += fuelPlan * (laps - 1);
-        }
-        const target = { sup: Math.max(period.sup, floor.sup), fuel: Math.max(period.fuel, floor.fuel) };
-        const had = { sup: s.cx.sup, fuel: s.cx.fuel };
-        const buy = { sup: Math.max(0, target.sup - had.sup), fuel: Math.max(0, target.fuel - had.fuel) };
-        s.cx.sup += buy.sup; s.cx.fuel += buy.fuel;
-        s.target = target;
-        Object.assign(ev, { draws, floor, period, target, had, buy, workingSet, longLap: spanDays > R });
+        const target = draws.reduce((sum, d) => sum + d.need, 0);
+        const had = s.cx.rat;
+        const buy = Math.max(0, target - had);
+        s.cx.rat += buy;
+        const next = upcoming.find(d => d > t + R + EPS);
+        Object.assign(ev, { draws, target, had, buy, next });
+        s.restock = { t, draws, target, next };
         restocks.push(ev);
       }
       ev.after = JSON.parse(JSON.stringify(s));
     }
-    // next restock (day 15) preview for the note
-    const nextRestock = END;
-    const nextDeps = departs.concat([departs.length * L]).filter(d => d >= nextRestock - EPS && d <= nextRestock + R + EPS);
-    return { L, bill, fuelBurn, fuelPlan, need, events, restocks, departs, nextDeps,
-      init: { cx: { sup: 0, fuel: 0, prod: 0 }, ship: { sup: 0, prod: 0 }, base: { lvl: USE * L / 2 + 1, t: 0, prodT: 0 }, target: null } };
+    return { L, bill, events, restocks, departs,
+      init: { cx: { rat: 0, c: 0 }, ship: { rat: 0, c: 0 }, base: { lvl: USE * L / 2 + 1, t: 0, cT: 0 }, restock: null } };
   }
 
   function stateAt(sc, t) {
     let snap = sc.init;
     for (const ev of sc.events) { if (ev.t <= t + EPS) snap = ev.after; else break; }
     const base = Math.max(0, snap.base.lvl - USE * (t - snap.base.t));
-    return { cx: snap.cx, ship: snap.ship, base, baseProd: PROD * (t - snap.base.prodT), target: snap.target };
+    return { cx: snap.cx, ship: snap.ship, base, baseC: PROD * (t - snap.base.cT), restock: snap.restock };
   }
   // value just before an event (for vertical steps in the chart)
   function stateBefore(sc, t) { return stateAt(sc, t - 1e-6); }
 
   const scenarios = { 3: build(3), 8: build(8) };
-  document.getElementById('r-bill3').textContent = scenarios[3].bill + ' SUP';
-  document.getElementById('r-bill8').textContent = scenarios[8].bill + ' SUP';
+  document.getElementById('r-bill3').textContent = scenarios[3].bill + ' RAT';
+  document.getElementById('r-bill8').textContent = scenarios[8].bill + ' RAT';
 
   // ---------------- Text ----------------
   const fmtDay = t => (Math.round(t * 10) / 10).toFixed(Number.isInteger(Math.round(t * 10) / 10) ? 0 : 1);
+  const depList = draws => draws.map(d => 'day ' + fmtDay(d.t)).join(' & ');
   function describe(ev, sc) {
     switch (ev.type) {
       case 'restock': {
-        const b = ev.buy;
-        if (b.sup === 0 && b.fuel === 0) return `Target ${ev.target.sup} SUP / ${ev.target.fuel} SF. No departure in the next 5 days, so nothing to buy.`;
-        return `Target ${ev.target.sup} SUP / ${ev.target.fuel} SF. Warehouse has ${ev.had.sup} / ${ev.had.fuel}. Buy ${b.sup} SUP + ${b.fuel} SF.`;
+        if (ev.draws.length === 0) return `No departure in the next 5 days (next is day ${fmtDay(ev.next)}). Target 0, nothing to buy.`;
+        return `Target ${ev.target} RAT (${ev.draws.length} × ${sc.bill}). Warehouse has ${ev.had}. Buy ${ev.buy} RAT.`;
       }
-      case 'depart': return `Refuel ${ev.fuel} SF and load one ${sc.L}-day bill: ${ev.sup} SUP.`;
-      case 'visit': return `Base had ${Math.round(ev.before)}. Drop ${ev.sup}, sweep ${Math.round(ev.swept)}, leave ${ev.sup}. ${Math.round(ev.home)} leftover + ${Math.round(ev.prod)} PROD ride home.`;
-      case 'arrive': return `Unload ${Math.round(ev.sup)} SUP + ${Math.round(ev.prod)} PROD into the warehouse.`;
+      case 'depart': return `Load one ${sc.L}-day bill: ${ev.rat} RAT.`;
+      case 'visit': return `Base had ${Math.round(ev.before)}. Drop ${ev.rat}. ${Math.round(ev.home)} leftover + ${Math.round(ev.c)} C ride home.`;
+      case 'arrive': return `Unload ${Math.round(ev.rat)} RAT + ${Math.round(ev.c)} C into the warehouse.`;
     }
+  }
+  function targetWhy(r, sc) {
+    const head = `Set by the day-${fmtDay(r.t)} restock. It counts the departures in the next ${R} days, through day ${fmtDay(r.t + R)}.`;
+    if (r.draws.length === 0) return `${head}<br><br>None fall in that window. The next is day ${fmtDay(r.next)}, so the target is <b>0</b>. The day-${fmtDay(r.t + R)} restock buys that lap.`;
+    const n = r.draws.length;
+    return `${head}<br><br>${n === 1 ? 'One departure' : n + ' departures'} (${depList(r.draws)}) × the ${sc.bill} RAT bill = <b>${r.target} RAT</b>.<br><br>The bill is ${sc.L} days of use × ${USE} RAT/day + 1. CX Buy fills the warehouse up to the target.`;
   }
   const LABEL = { restock: 'RESTOCK', depart: 'DEPART', visit: 'BASE', arrive: 'DOCK' };
 
@@ -397,7 +388,7 @@
     ctx.fillStyle = low ? `rgba(255,120,90,${0.5 + 0.5 * Math.sin(now / 150)})` : `rgba(218,155,240,${0.6 + 0.4 * Math.sin(now / 500)})`;
     ctx.beginPath(); ctx.arc(bx, by - 10, 2.2, 0, 6.29); ctx.fill();
     ctx.restore();
-    label(x, y + r + 16, 'YOUR BASE', `uses ${USE} SUP/day · makes ${PROD} PROD/day`);
+    label(x, y + r + 16, 'YOUR BASE', `uses ${USE} RAT/day · makes ${PROD} C/day`);
     return { domeX: x + bx, domeY: y + by };
   }
   function label(x, y, title, sub) {
@@ -440,24 +431,24 @@
     }
     ctx.fillStyle = '#c9d3f0'; ctx.strokeStyle = '#5c6fa8'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(4, -7); ctx.lineTo(-11, -7); ctx.lineTo(-11, 7); ctx.lineTo(4, 7); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = '#2a94c8'; ctx.fillRect(-8, -5, 5, 10); ctx.fillRect(-2, -5, 5, 10);
+    ctx.fillStyle = '#e07b7b'; ctx.fillRect(-8, -5, 5, 10); ctx.fillRect(-2, -5, 5, 10);
     ctx.fillStyle = '#f7c548'; ctx.beginPath(); ctx.arc(9, 0, 2, 0, 6.29); ctx.fill();
     ctx.restore();
   }
   function drawShipCargo(p, st) {
-    const sup = Math.round(st.ship.sup), prod = Math.round(st.ship.prod);
-    if (p.docked || (sup === 0 && prod === 0)) return;
-    const text = prod > 0 ? `${sup} SUP · ${prod} PROD` : `${sup} SUP`;
+    const rat = Math.round(st.ship.rat), c = Math.round(st.ship.c);
+    if (p.docked || (rat === 0 && c === 0)) return;
+    const text = c > 0 ? `${rat} RAT · ${c} C` : `${rat} RAT`;
     ctx.font = '600 11px "Segoe UI", system-ui, sans-serif';
     const w = ctx.measureText(text).width + 16;
     const x = p.x - w / 2, y = p.out ? p.y - 34 : p.y + 16;
-    ctx.fillStyle = 'rgba(10,14,30,0.85)'; ctx.strokeStyle = 'rgba(108,198,242,0.5)';
+    ctx.fillStyle = 'rgba(10,14,30,0.85)'; ctx.strokeStyle = 'rgba(224,123,123,0.55)';
     ctx.beginPath(); ctx.roundRect(x, y, w, 18, 9); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#e6e9f5'; ctx.textAlign = 'center'; ctx.fillText(text, p.x, y + 13);
   }
 
   // ---------------- Gauges ----------------
-  const scaleCx = sc_ => Math.max(...sc_.restocks.map(r => Math.max(r.target.sup, r.had.sup))) * 1.15;
+  const scaleCx = sc_ => Math.max(stateAt(sc_, END).cx.c, ...sc_.restocks.map(r => Math.max(r.target, r.had + r.buy + 1))) * 1.15;
   function bar(x, y, w, h, value, max, color, hi, name, target) {
     ctx.fillStyle = 'rgba(255,255,255,0.05)'; ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill();
     const fh = Math.max(0, Math.min(1, value / max)) * h;
@@ -485,50 +476,63 @@
   }
   function drawGauges(st) {
     const max = scaleCx(sc);
-    const x = 16, y = 14, w = 168, h = 150;
+    const x = 16, y = 14, w = 210, h = 150;
     panel(x, y, w, h, 'CX WAREHOUSE');
-    const tg = st.target;
-    bar(x + 22, y + 44, 30, 84, st.cx.sup, max, '#1b6d98', '#6cc6f2', 'SUP', tg?.sup);
-    bar(x + 70, y + 44, 30, 84, st.cx.fuel, max, '#8a5500', '#ffb43a', 'SF', tg?.fuel);
-    ctx.textAlign = 'center'; ctx.fillStyle = '#e6e9f5'; ctx.font = '600 13px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText(Math.round(st.cx.prod), x + 133, y + 82);
-    ctx.fillStyle = '#8b93b5'; ctx.font = '10.5px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText('PROD', x + 133, y + 97); ctx.fillText('returned', x + 133, y + 110);
-    if (tg) {
-      ctx.save(); ctx.setLineDash([4, 3]); ctx.strokeStyle = '#f7c548';
-      ctx.beginPath(); ctx.moveTo(x + 118, y + 130); ctx.lineTo(x + 132, y + 130); ctx.stroke(); ctx.restore();
-      ctx.fillStyle = '#c9a43c'; ctx.textAlign = 'left'; ctx.fillText('target', x + 135, y + 133);
-    }
+    const tg = st.restock?.target;
+    bar(x + 92, y + 44, 30, 84, st.cx.rat, max, '#a84a4a', '#f6aaaa', 'RAT', tg);
+    bar(x + 140, y + 44, 30, 84, st.cx.c, max, '#6e4527', '#d39b68', 'C', undefined);
     // base gauge
-    const bw = 168, bx = W - bw - 16;
-    panel(bx, y, bw, h, 'BASE SUPPLIES');
-    bar(bx + 22, y + 44, 30, 84, st.base, sc.bill * 1.15, '#7a3a99', '#da9bf0', 'SUP', undefined);
+    const bw = 210, bx = W - bw - 16;
+    panel(bx, y, bw, h, 'BASE');
+    const baseMax = sc.bill * 1.15;
+    bar(bx + 22, y + 44, 30, 84, st.base, baseMax, '#a84a4a', '#f6aaaa', 'RAT', undefined);
+    bar(bx + 70, y + 44, 30, 84, st.baseC, baseMax, '#6e4527', '#d39b68', 'C', undefined);
     const days = st.base / USE;
     ctx.textAlign = 'left'; ctx.fillStyle = '#e6e9f5'; ctx.font = '600 20px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText(days.toFixed(1), bx + 70, y + 86);
+    ctx.fillText(days.toFixed(1), bx + 118, y + 86);
     ctx.fillStyle = '#8b93b5'; ctx.font = '10.5px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText('days of supply', bx + 70, y + 101);
-    ctx.fillText(`bill = ${sc.bill} SUP`, bx + 70, y + 122);
+    ctx.fillText('days of RAT', bx + 118, y + 101);
+    ctx.fillText(`bill = ${sc.bill} RAT`, bx + 118, y + 122);
+  }
+  const tgtEl = document.getElementById('tgt'), tgtNum = document.getElementById('tgtNum'), tgtPop = document.getElementById('tgtPop');
+  let tgtKey = null;
+  function syncTarget(st) {
+    const r = st.restock;
+    const key = r ? `${sc.L}:${r.t}` : null;
+    if (key === tgtKey) return;
+    tgtKey = key;
+    tgtEl.style.display = r ? 'block' : 'none';
+    if (r) { tgtNum.textContent = r.target; tgtPop.innerHTML = targetWhy(r, sc); }
   }
   function drawClock(time) {
-    const x = W / 2, y = 34;
+    // with no gap between the gauge panels, the clock moves into the middle of the orbit
+    const room = W - 2 * (16 + 210) - 24, tight = room < 70;
+    const x = W / 2, y = tight ? geo().cy - 52 : 34;
     ctx.textAlign = 'center';
     ctx.fillStyle = '#8b93b5'; ctx.font = '600 10.5px "Segoe UI", system-ui, sans-serif';
     ctx.fillText('DAY', x, y - 12);
     ctx.fillStyle = '#e6e9f5'; ctx.font = '600 26px "Segoe UI", system-ui, sans-serif';
     ctx.fillText(time.toFixed(1), x, y + 14);
-    // restock period strip
-    const sw = 300, sx = x - sw / 2, sy = y + 28;
+    // restock period strip: one segment per restock period, each split into one tick per day.
+    // The segments sit side by side when there is room between the gauge panels, stacked otherwise.
+    const wide = room >= 300;
+    const pw = wide ? 96 : tight ? 80 : Math.min(120, room), dayGap = 2;
+    const sy = y + 28, rowH = 11;
     for (let i = 0; i < 3; i++) {
-      const px = sx + i * (sw / 3) + 2, pw = sw / 3 - 4;
-      ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.beginPath(); ctx.roundRect(px, sy, pw, 6, 3); ctx.fill();
-      const f = Math.max(0, Math.min(1, (time - i * R) / R));
-      if (f > 0) { ctx.fillStyle = '#f7c548'; ctx.beginPath(); ctx.roundRect(px, sy, pw * f, 6, 3); ctx.fill(); }
+      const px = wide ? x - 150 + i * 102 + 3 : x - pw / 2, py = wide ? sy : sy + i * rowH;
+      const dw = (pw - 4 * dayGap) / 5;
+      for (let j = 0; j < 5; j++) {
+        const dx = px + j * (dw + dayGap);
+        ctx.fillStyle = 'rgba(255,255,255,0.07)'; ctx.beginPath(); ctx.roundRect(dx, py, dw, 6, 2); ctx.fill();
+        const f = Math.max(0, Math.min(1, time - (i * R + j)));
+        if (f > 0) { ctx.fillStyle = '#f7c548'; ctx.beginPath(); ctx.roundRect(dx, py, dw * f, 6, 2); ctx.fill(); }
+      }
     }
+    const ty = wide ? sy + 20 : sy + 3 * rowH + 12, maxW = wide ? 300 : tight ? 110 : room;
     const into = time >= END - EPS ? null : R - (time % R);
     ctx.fillStyle = '#8b93b5'; ctx.font = '11px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText(into === null ? 'next restock now · day 15' : `restock every ${R} days · next in ${into.toFixed(1)} d`, x, sy + 20);
-    ctx.fillText(`ship lap ${sc.L} days`, x, sy + 35);
+    ctx.fillText(into === null ? 'next restock now · day 15' : `restock every ${R} days · next in ${into.toFixed(1)} d`, x, ty, maxW);
+    ctx.fillText(`ship lap ${sc.L} days`, x, ty + 15, maxW);
   }
 
   // ---------------- Particles & toasts ----------------
@@ -578,22 +582,22 @@
   function fire(ev) {
     const g = geo();
     const station = { x: g.sx, y: g.sy }, market = { x: g.sx, y: -10 };
-    const cx = { x: 16 + 37, y: 14 + 100 }, cxFuel = { x: 16 + 85, y: 14 + 100 };
+    const cx = { x: 16 + 107, y: 14 + 100 }, cxC = { x: 16 + 155, y: 14 + 100 };
     const ship = () => ({ x: shipPos.x, y: shipPos.y }), dome = () => ({ ...domePos });
-    const baseBar = { x: W - 168 - 16 + 37, y: 14 + 100 };
+    const baseBar = { x: W - 210 - 16 + 37, y: 14 + 100 }, baseC = { x: W - 210 - 16 + 85, y: 14 + 100 };
+    const RAT = '#f09090', C = '#c88a55';
     if (ev.type === 'restock') {
-      if (ev.buy.sup > 0) spawnFlow(market, cx, Math.min(14, 4 + Math.round(ev.buy.sup / 8)), '#6cc6f2');
-      if (ev.buy.fuel > 0) spawnFlow(market, cxFuel, Math.min(8, 3 + Math.round(ev.buy.fuel / 8)), '#ffb43a', 200);
+      if (ev.buy > 0) spawnFlow(market, cx, Math.min(14, 4 + Math.round(ev.buy / 8)), RAT);
     } else if (ev.type === 'depart') {
-      spawnFlow(cx, station, 6, '#6cc6f2'); spawnFlow(cxFuel, station, 4, '#ffb43a', 100);
+      spawnFlow(cx, station, 6, RAT);
     } else if (ev.type === 'visit') {
-      spawnFlow(ship, dome, 8, '#6cc6f2');
-      spawnFlow(dome, baseBar, 6, '#da9bf0', 500);
-      if (ev.home >= 0.5) spawnFlow(dome, ship, 2, '#6cc6f2', 900);
-      spawnFlow(dome, ship, 4, '#dfe6ff', 1000);
+      spawnFlow(ship, dome, 8, RAT);
+      spawnFlow(dome, baseBar, 6, RAT, 500);
+      if (ev.home >= 0.5) spawnFlow(dome, ship, 2, RAT, 900);
+      spawnFlow(baseC, ship, 4, C, 300);
     } else if (ev.type === 'arrive') {
-      if (ev.sup >= 0.5) spawnFlow(station, cx, 2, '#6cc6f2');
-      spawnFlow(station, { x: 16 + 133, y: 14 + 80 }, 5, '#dfe6ff', 100);
+      if (ev.rat >= 0.5) spawnFlow(station, cx, 2, RAT);
+      spawnFlow(station, cxC, 5, C, 100);
     }
     toast(ev);
   }
@@ -606,7 +610,7 @@
     if (playing) {
       // slow down a little around events so they can be read
       const near = sc.events.some(e => e.t > t - 0.05 && e.t < t + 0.15);
-      t = Math.min(END, t + dt * speed * (near ? 0.18 : 0.42));
+      t = Math.min(END, t + dt * speed * pace() * (near ? 0.18 : 0.42));
       for (const ev of sc.events) if (ev.t > prev + EPS * 0 && ev.t <= t && !(prev === 0 && ev.t === 0 && false)) fire(ev);
       if (prev === 0 && !firedZero) { firedZero = true; sc.events.filter(e => e.t === 0).forEach(fire); }
       if (t >= END) playing = false;
@@ -616,6 +620,8 @@
     requestAnimationFrame(frame);
   }
   let firedZero = false;
+  // the 3-day loop plays at half the 8-day pace
+  const pace = () => sc.L === 3 ? 0.5 : 1;
   function draw(now) {
     const g = geo();
     drawSky(now);
@@ -628,7 +634,7 @@
     if (st.base > 0.5) {
       for (let i = 0; i < 3; i++) {
         const k = ((now / 1600) + i / 3) % 1;
-        ctx.fillStyle = `rgba(218,155,240,${(1 - k) * 0.7})`;
+        ctx.fillStyle = `rgba(240,144,144,${(1 - k) * 0.7})`;
         ctx.beginPath(); ctx.arc(dome.domeX + (i - 1) * 6, dome.domeY - 14 - k * 22, 1.6, 0, 6.29); ctx.fill();
       }
     }
@@ -637,6 +643,7 @@
     drawShip(p, now);
     drawShipCargo(p, st);
     drawGauges(st);
+    syncTarget(st);
     drawClock(t);
     drawParts(now);
     drawToast(now);
@@ -653,6 +660,7 @@
     sc.events.forEach(e => times.add(e.t));
     const sorted = [...times].sort((a, b) => a - b);
     const pick = s => key === 'base' ? s.base : s.cx[key];
+    // keys: 'rat' (CX RAT), 'base' (base RAT)
     for (const x of sorted) {
       if (sc.events.some(e => Math.abs(e.t - x) < EPS) && x > 0) pts.push([x, pick(stateBefore(sc, x))]);
       pts.push([x, pick(stateAt(sc, x))]);
@@ -663,7 +671,8 @@
   function renderChart() {
     chart.innerHTML = '';
     const w = chart.clientWidth, h = chart.clientHeight, m = { l: 38, r: 14, t: 10, b: 26 };
-    const all = ['sup', 'fuel', 'base'].map(series);
+    const KEYS = ['rat', 'base'];
+    const all = KEYS.map(series);
     const maxV = Math.max(...all.flat().map(p => p[1]));
     const step = maxV > 100 ? 25 : 10;
     const top = Math.ceil(maxV / step) * step;
@@ -684,11 +693,12 @@
     const defs = el('defs', {}, chart);
     const cp = el('clipPath', { id: clipId }, defs);
     cutRect = el('rect', { x: 0, y: 0, width: X(t), height: h }, cp);
-    const colors = { sup: '#2a94c8', fuel: '#c97c00', base: '#b45cd6' };
-    ['sup', 'fuel', 'base'].forEach((k, i) => {
+    const colors = { rat: '#e07b7b', base: '#e07b7b' };
+    KEYS.forEach((k, i) => {
       const d = all[i].map((p, j) => `${j ? 'L' : 'M'}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join('');
-      el('path', { d, fill: 'none', stroke: colors[k], 'stroke-width': 2, opacity: 0.18, 'stroke-linejoin': 'round' }, chart);
-      el('path', { d, fill: 'none', stroke: colors[k], 'stroke-width': 2, 'clip-path': `url(#${clipId})`, 'stroke-linejoin': 'round' }, chart);
+      const dash = k === 'base' ? { 'stroke-dasharray': '5 4' } : {};
+      el('path', { d, fill: 'none', stroke: colors[k], 'stroke-width': 2, opacity: 0.18, 'stroke-linejoin': 'round', ...dash }, chart);
+      el('path', { d, fill: 'none', stroke: colors[k], 'stroke-width': 2, 'clip-path': `url(#${clipId})`, 'stroke-linejoin': 'round', ...dash }, chart);
     });
     el('line', { id: 'playhead', x1: X(t), x2: X(t), y1: m.t, y2: h - m.b, stroke: '#e6e9f5', 'stroke-width': 1, opacity: 0.6 }, chart);
     el('line', { id: 'hoverline', x1: 0, x2: 0, y1: m.t, y2: h - m.b, stroke: '#a9b1cc', 'stroke-width': 1, opacity: 0 }, chart);
@@ -701,7 +711,7 @@
     const d = Math.max(0, Math.min(END, (x - m.l) / (w - m.l - m.r) * END));
     const st = stateAt(sc, d);
     const hl = chart.querySelector('#hoverline'); hl.setAttribute('x1', chartScale.X(d)); hl.setAttribute('x2', chartScale.X(d)); hl.setAttribute('opacity', 0.8);
-    tip.innerHTML = `<b>Day ${d.toFixed(1)}</b><br><span class="k" style="background:#2a94c8"></span>CX supplies ${Math.round(st.cx.sup)}<br><span class="k" style="background:#c97c00"></span>CX fuel ${Math.round(st.cx.fuel)} SF<br><span class="k" style="background:#b45cd6"></span>Base supplies ${Math.round(st.base)}`;
+    tip.innerHTML = `<b>Day ${d.toFixed(1)}</b><br><span class="k" style="background:#e07b7b"></span>CX RAT ${Math.round(st.cx.rat)}<br><span class="k" style="background:#e07b7b"></span>Base RAT ${Math.round(st.base)}`;
     tip.style.display = 'block';
     const card = chart.parentElement.getBoundingClientRect();
     const left = e.clientX - card.left + 14;
@@ -727,23 +737,19 @@
   function renderRestocks() {
     const tb = document.getElementById('restocks');
     const rows = sc.restocks.map(r => {
-      const dep = r.draws.length === 0 ? 'none' : r.draws.map(d => `day ${fmtDay(d.t)} (${d.need.sup})`).join(' + ');
-      const state = r.workingSet ? 'no ship out yet' : 'ship on the route';
-      const periodSup = r.period.sup, floorSup = r.floor.sup;
-      const pWin = periodSup >= floorSup && periodSup > 0, fWin = floorSup > periodSup;
-      return `<tr><td>Day ${fmtDay(r.t)}</td><td>${state}<br><span style="color:#6d7699">departures in next 5 d: ${dep}</span></td>
-        <td class="${pWin ? 'win' : ''}">${periodSup} / ${r.period.fuel}</td>
-        <td class="${fWin ? 'win' : ''}">${floorSup} / ${r.floor.fuel}</td>
-        <td>${r.target.sup} / ${r.target.fuel}</td>
-        <td>${r.had.sup} / ${r.had.fuel}</td>
-        <td class="buy">${r.buy.sup} / ${r.buy.fuel}</td></tr>`;
+      const dep = r.draws.length === 0 ? `none (next is day ${fmtDay(r.next)})` : depList(r.draws);
+      return `<tr><td>Day ${fmtDay(r.t)}</td><td>${dep}</td>
+        <td>${r.draws.length} × ${sc.bill} = ${r.target}</td>
+        <td>${r.had}</td>
+        <td class="buy">${r.buy}</td></tr>`;
     }).join('');
-    tb.innerHTML = `<tr><th>When</th><th>Situation</th><th>Period amount<br>SUP / SF</th><th>Departure draws<br>SUP / SF</th><th>Target</th><th>Warehouse had</th><th>Buy</th></tr>${rows}`;
+    tb.innerHTML = `<tr><th>When</th><th>Departures in the next 5 days</th><th>Target (RAT)</th><th>Warehouse had</th><th>Buy</th></tr>${rows}`;
     const note = document.getElementById('restockNote');
+    const [r0, r1, r2] = sc.restocks;
     if (sc.L > R) {
-      note.innerHTML = `The lap (${sc.L} d) is longer than the restock period, so the period amount is only the working set before a ship is out, and nothing after. Each restock buys exactly the departures that fall inside its own 5 days. The day-10 restock sees none (the next departure is day ${sc.departs.length * sc.L}), so it buys nothing; the day-15 restock buys that lap. <span style="color:#f7c548">Gold</span> marks which side set the target.`;
+      note.innerHTML = `The lap (${sc.L} d) is longer than the restock period, so each restock's 5 days hold one departure or none. Day 0 buys the day-0 lap. Day 5 buys the day-${fmtDay(r1.draws[0].t)} lap, three days early. The day-10 restock sees no departure (the next is day ${fmtDay(r2.next)}), so it buys nothing; the day-15 restock buys that lap. Between a departure and the restock before the next one, the warehouse sits near ${r2.had}.`;
     } else {
-      note.innerHTML = `The lap (${sc.L} d) is shorter than the restock period. The first restock buys the working set the ship leaves with, plus 5 days of base use. After that, two departures land inside each window (${sc.restocks.slice(1).map(r => r.draws.map(d => 'day ' + fmtDay(d.t)).join(' & ')).join('; ')}), and their draws (${sc.restocks[1]?.floor.sup}) beat the 5-day period amount (${sc.restocks[1]?.period.sup}). That's why the warehouse bottoms out near 2, not 0 and not 20. <span style="color:#f7c548">Gold</span> marks which side set the target.`;
+      note.innerHTML = `The lap (${sc.L} d) is shorter than the restock period, so two departures land inside each restock's 5 days (${sc.restocks.map(r => depList(r.draws)).join('; ')}). Each target is 2 × ${sc.bill} = ${r1.target} RAT. The warehouse bottoms out near ${r2.had}, not 0, because each lap's +1 buffer rides home and CX Buy only fills up to the target.`;
     }
   }
 
